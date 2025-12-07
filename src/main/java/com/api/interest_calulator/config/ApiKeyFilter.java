@@ -11,7 +11,7 @@ import java.io.IOException;
 public class ApiKeyFilter implements Filter {
 
     @Value("${security.api.key:}")
-    private String internalApiKey;  // Railway private API key
+    private String internalApiKey;
 
     @Value("${security.api.enabled:true}")
     private boolean securityEnabled;
@@ -28,7 +28,7 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // Allow health check & swagger
+        // Allow swagger, health check
         String path = req.getRequestURI();
         if (path.equals("/ping") ||
                 path.contains("swagger") ||
@@ -39,28 +39,29 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // Extract API key
+        // ✅ SUPPORT BOTH RAPIDAPI + NORMAL HEADER
         String clientKey = req.getHeader("X-API-KEY");
+        if (clientKey == null) {
+            clientKey = req.getHeader("X-RapidAPI-Key");  // <- IMPORTANT FIX
+        }
 
         if (clientKey == null || clientKey.isBlank()) {
             unauthorized(res, "Missing API Key");
             return;
         }
 
-        // 1️⃣ Accept internal Railway key
+        // 1️⃣ Accept your internal private API key
         if (internalApiKey != null && !internalApiKey.isBlank() && clientKey.equals(internalApiKey)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2️⃣ Accept RapidAPI user keys (alphanumeric 20–60 chars)
-        // RapidAPI keys match this pattern consistently
+        // 2️⃣ Accept RapidAPI keys (alphanumeric 20–60 chars)
         if (clientKey.matches("^[A-Za-z0-9]{20,60}$")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Otherwise reject
         unauthorized(res, "Invalid API Key");
     }
 
