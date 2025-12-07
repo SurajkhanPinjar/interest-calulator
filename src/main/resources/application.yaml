@@ -14,6 +14,7 @@ security:
     enabled: true
     key: ${API_KEY:DEV_LOCAL_KEY_123}   # Uses ENV variable, fallback for local
 
+
 # ============================
 # ? LOGGING
 # ============================
