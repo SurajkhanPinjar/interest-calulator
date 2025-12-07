@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/interest")
 public class HealthController {
 
     @Operation(summary = "Health Check Endpoint", description = "Used by RapidAPI and uptime monitors")
