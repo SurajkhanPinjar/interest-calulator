@@ -2,14 +2,12 @@ package com.api.interest_calulator.config;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class ApiKeyFilter implements Filter {
 
@@ -18,9 +16,6 @@ public class ApiKeyFilter implements Filter {
 
     @Value("${security.api.enabled:true}")
     private boolean securityEnabled;
-
-    private static final org.slf4j.Logger log =
-            org.slf4j.LoggerFactory.getLogger(ApiKeyFilter.class);
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -34,7 +29,7 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // Allow swagger, health check
+        // Allow Swagger + Health Check
         String path = req.getRequestURI();
         if (path.equals("/ping") ||
                 path.contains("swagger") ||
@@ -45,34 +40,29 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-
-        // ✅ SUPPORT BOTH RAPIDAPI + NORMAL HEADER
+        // Support both headers
         String clientKey = req.getHeader("X-API-KEY");
         String rapidKey = req.getHeader("X-RapidAPI-Key");
 
-        // 🔥 SAFE LOGGING (mask keys)
-        log.debug("Incoming X-API-KEY: {}", clientKey);
-        log.debug("Incoming X-RapidAPI-Key: {}", rapidKey);
+        // Choose whichever exists
+        String finalKey = (clientKey != null) ? clientKey : rapidKey;
 
-        // ✅ SUPPORT BOTH RAPIDAPI + NORMAL HEADER
-//        String clientKey = req.getHeader("X-API-KEY");
-        if (clientKey == null) {
-            clientKey = req.getHeader("X-RapidAPI-Key");  // <- IMPORTANT FIX
+        // Safe masked logging
+        log.debug("Incoming API Key (masked): {}", mask(finalKey));
+        log.debug("From header: {}", clientKey != null ? "X-API-KEY" : "X-RapidAPI-Key");
+
+        if (finalKey == null || finalKey.isBlank()) {
+            return unauthorized(res, "Missing API Key");
         }
 
-        if (clientKey == null || clientKey.isBlank()) {
-            unauthorized(res, "Missing API Key");
-            return;
-        }
-
-        // 1️⃣ Accept your internal private API key
-        if (internalApiKey != null && !internalApiKey.isBlank() && clientKey.equals(internalApiKey)) {
+        // 1) Allow internal Railway private key
+        if (finalKey.equals(internalApiKey)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2️⃣ Accept ALL RapidAPI user keys (anything long enough & not your internal key)
-        if (!clientKey.equals(internalApiKey) && clientKey.length() >= 15) {
+        // 2) Allow RapidAPI keys (alphanumeric 20–60 chars)
+        if (finalKey.matches("^[A-Za-z0-9]{20,60}$")) {
             chain.doFilter(request, response);
             return;
         }
@@ -84,5 +74,10 @@ public class ApiKeyFilter implements Filter {
         res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         res.setContentType("application/json");
         res.getWriter().write("{\"success\":false,\"message\":\"" + message + "\"}");
+    }
+
+    private String mask(String key) {
+        if (key == null || key.length() < 6) return "******";
+        return key.substring(0, 3) + "****" + key.substring(key.length() - 3);
     }
 }
