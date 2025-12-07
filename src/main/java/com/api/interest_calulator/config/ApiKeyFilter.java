@@ -44,29 +44,32 @@ public class ApiKeyFilter implements Filter {
         String clientKey = req.getHeader("X-API-KEY");
         String rapidKey = req.getHeader("X-RapidAPI-Key");
 
-        // Choose whichever exists
+        // Final selected key
         String finalKey = (clientKey != null) ? clientKey : rapidKey;
 
-        // Safe masked logging
+        // Masked logging
         log.debug("Incoming API Key (masked): {}", mask(finalKey));
         log.debug("From header: {}", clientKey != null ? "X-API-KEY" : "X-RapidAPI-Key");
 
+        // Missing key
         if (finalKey == null || finalKey.isBlank()) {
-            return unauthorized(res, "Missing API Key");
+            unauthorized(res, "Missing API Key");
+            return;
         }
 
-        // 1) Allow internal Railway private key
+        // 1) Allow your private internal key (Railway)
         if (finalKey.equals(internalApiKey)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2) Allow RapidAPI keys (alphanumeric 20–60 chars)
+        // 2) Allow RapidAPI user keys
         if (finalKey.matches("^[A-Za-z0-9]{20,60}$")) {
             chain.doFilter(request, response);
             return;
         }
 
+        // Invalid key
         unauthorized(res, "Invalid API Key");
     }
 
