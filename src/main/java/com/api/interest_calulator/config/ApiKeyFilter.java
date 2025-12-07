@@ -11,7 +11,7 @@ import java.io.IOException;
 public class ApiKeyFilter implements Filter {
 
     @Value("${security.api.key:}")
-    private String internalApiKey;  // Your Railway private API key
+    private String internalApiKey;  // Railway private API key
 
     @Value("${security.api.enabled:true}")
     private boolean securityEnabled;
@@ -28,14 +28,18 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // Allow Swagger in local environment
+        // Allow health check & swagger
         String path = req.getRequestURI();
-        if (path.startsWith("/swagger") || path.contains("api-docs") || path.contains("/v3/api-docs")) {
+        if (path.equals("/ping") ||
+                path.contains("swagger") ||
+                path.contains("api-docs") ||
+                path.contains("v3/api-docs")) {
+
             chain.doFilter(request, response);
             return;
         }
 
-        // Get incoming API key
+        // Extract API key
         String clientKey = req.getHeader("X-API-KEY");
 
         if (clientKey == null || clientKey.isBlank()) {
@@ -43,20 +47,20 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // 1️⃣ Allow internal (Railway) private key
+        // 1️⃣ Accept internal Railway key
         if (internalApiKey != null && !internalApiKey.isBlank() && clientKey.equals(internalApiKey)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2️⃣ Allow RapidAPI dynamic user keys
-        // RapidAPI keys are long & alphanumeric, so we allow non-empty keys that are not your private key
-        if (clientKey.length() >= 20) {
+        // 2️⃣ Accept RapidAPI user keys (alphanumeric 20–60 chars)
+        // RapidAPI keys match this pattern consistently
+        if (clientKey.matches("^[A-Za-z0-9]{20,60}$")) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Otherwise: Reject
+        // Otherwise reject
         unauthorized(res, "Invalid API Key");
     }
 
