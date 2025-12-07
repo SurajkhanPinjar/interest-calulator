@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
+import java.util.Collections;
 
 @Slf4j
 @Component
@@ -39,6 +40,10 @@ public class ApiKeyFilter implements Filter {
             chain.doFilter(request, response);
             return;
         }
+
+        System.out.println("Header Stream :");
+        Collections.list(req.getHeaderNames())
+                .forEach(name -> log.debug("HDR {} = {}", name, req.getHeader(name)));
 
         // Support both headers
         String clientKey = req.getHeader("X-API-KEY");
