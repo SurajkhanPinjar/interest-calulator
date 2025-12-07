@@ -56,8 +56,8 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // 2️⃣ Accept RapidAPI keys (alphanumeric 20–60 chars)
-        if (clientKey.matches("^[A-Za-z0-9]{20,60}$")) {
+        // 2️⃣ Accept ALL RapidAPI user keys (anything long enough & not your internal key)
+        if (!clientKey.equals(internalApiKey) && clientKey.length() >= 15) {
             chain.doFilter(request, response);
             return;
         }
