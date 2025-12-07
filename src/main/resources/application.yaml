@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:8082}
+
+spring:
+  application:
+    name: interest-calculator
+
+# ============================
+# ? API KEY SECURITY CONFIG
+# ============================
+security:
+  api:
+    enabled: true
+    key: ${API_KEY:DEV_LOCAL_KEY_123}   # Uses ENV variable, fallback for local
+
+# ============================
+# ? LOGGING
+# ============================
+logging:
+  level:
+    root: INFO
+    com.api: DEBUG
+
+# ============================
+# ? SWAGGER UI CUSTOM CONFIG
+# ============================
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui
+    operations-sorter: method
+    tags-sorter: alpha
