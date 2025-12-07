@@ -2,6 +2,9 @@ package com.api.interest_calulator.config;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +18,9 @@ public class ApiKeyFilter implements Filter {
 
     @Value("${security.api.enabled:true}")
     private boolean securityEnabled;
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(ApiKeyFilter.class);
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -39,8 +45,17 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
+
         // ✅ SUPPORT BOTH RAPIDAPI + NORMAL HEADER
         String clientKey = req.getHeader("X-API-KEY");
+        String rapidKey = req.getHeader("X-RapidAPI-Key");
+
+        // 🔥 SAFE LOGGING (mask keys)
+        log.debug("Incoming X-API-KEY: {}", clientKey);
+        log.debug("Incoming X-RapidAPI-Key: {}", rapidKey);
+
+        // ✅ SUPPORT BOTH RAPIDAPI + NORMAL HEADER
+//        String clientKey = req.getHeader("X-API-KEY");
         if (clientKey == null) {
             clientKey = req.getHeader("X-RapidAPI-Key");  // <- IMPORTANT FIX
         }
