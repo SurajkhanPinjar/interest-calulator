@@ -48,7 +48,9 @@ public class ApiKeyFilter implements Filter {
         String finalKey = (clientKey != null) ? clientKey : rapidKey;
 
         // Masked logging
-        log.debug("Incoming API Key (masked): {}", mask(finalKey));
+        log.debug("Client Key: {}", clientKey);
+        log.debug("Rapi Key: {}", rapidKey);
+        log.debug("FInal API Key : {}", finalKey);
         log.debug("From header: {}", clientKey != null ? "X-API-KEY" : "X-RapidAPI-Key");
 
         // Missing key
